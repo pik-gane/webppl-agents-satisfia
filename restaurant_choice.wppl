@@ -25,10 +25,9 @@ var options = extend({
 // fold: Restaurant constants, tableToUtilityFunction
 
 var ___ = ' ';
-var DN = { name : 'Donut N' };
-var DS = { name : 'Donut S' };
-var V = { name : 'Veg' };
-var N = { name : 'Noodle' };
+var G1 = { name : 'G1' };
+var G3 = { name : 'G3' };
+var G4 = { name : 'G4' };
 
 var tableToIndicatorIncrementFct = function(table, feature) {
   return function(state, action) {
@@ -40,21 +39,61 @@ var tableToIndicatorIncrementFct = function(table, feature) {
 
 // Construct world 
 
+
+
+// Grid 1: Aspiration is 2 here. The desired solution is to go north. Always going left would give too little,
+// always right too much. A mixture would give enough in expectation, but is not desired solution. Agent starts at [2,1]
+
+// var grid = [
+// ["#", "#",  "#",  "#",  "#"],
+// ["#",  "#",  G2, "#", "#"],
+// ["#", G1, ___,  G3, "#"],
+// ["#",  "#",  "#",   "#",   "#"]
+// ];
+
+
+// Grid 2: Aspiration is 2 here again. The desired solution is to go to G2, albeit it would require more steps. 
+// The starting position here is [1,2]
+// var grid = [
+//["#",   "#",  "#",   "#",  "#"],
+//["#",   ____ ,  ___, ___,  "#"],
+//["#",  G1,  G3,  G2,  "#"], 
+//["#",  "#",   "#",   "#",   "#"]
+//];
+
+// Grid 3: Aspiration is 2. Desired is to go the the Goal state that gives 2 instead of flipping 
+// a coin and going to one of the other two goal states with positive return. The starting position is [2,2]
+// var grid = [
+//["#",  "#",  "#",  "#",  "#"],
+//["#",  G0, "#", G3, "#"],
+//["#", ___,  ___, ___,  "#"],
+//["#",  G1,  "#",  G2,  "#"],
+//["#",  "#",  "#",  "#",  "#"]
+//];
+
+// Grid 4: Aspiration is 1.5. The aspiration is that the agent flips a coint between going to G1 and G2 to arrive at the
+// aspiration of 1.5 (leading to smaller variance) than mixing between 0 and 3.
+// var grid = [
+// ["#",  "#",  "#",  "#",  "#", "#"],
+// ["#", ___, ___,  ___, ___,   "#"],
+// ["#",  G1,  G3,  G2,  G0,  "#"]
+// ["#",  "#",  "#",  "#",   "#", "#"]
+// ];
+
+// Grid 6: Aleph 0 is 2 here. The desired behaviour is to go through d to G4 instead of going left and flipping a coin.
 var grid = [
-  ['#', '#', '#', '#',  V , '#'],
-  ['#', '#', '#', ___, ___, ___],
-  ['#', '#', DN , 's', '#', ___],
-  ['#', '#', '#', 's', '#', ___],
-  ['#', '#', '#', ___, ___, ___],
-  ['#', '#', '#', ___, '#',  N ],
-  [___, ___, ___, ___, '#', '#'],
-  [DS , '#', '#', ___, '#', '#']
+["#",  "#",  "#",  "#",  "#"],
+["#",  G1, "#", G4, "#"],
+["#", ___,  ___,  "d",  "#"],
+["#",  G3,  "#",  "#",  "#"],
+["#",  "#",  "#",  "#",  "#"]
 ];
+
 
 var mdp = makeGridWorldMDP({
   grid,
-  start: [3, 1],
-  totalTime: 9
+  start: [2, 2],
+  totalTime: 3
 });
 
 var world = mdp.world;
@@ -66,21 +105,20 @@ var stateToActions = world.stateToActions;
 // (Note: under a "maximization" paradigm, this would be called "reward" or "utility")
 
 var expectedIndicatorIncrementTable = {
-  'Donut S': 1,
-  'Donut N': 1,
-  'Veg': 3,
-  'Noodle': 2,
-  's': -0.1, // -0.3 sand roads take time
-  ' ': -0.1
+  'G1': 1,
+  'G3': 3,
+  'G4': 4,
+  'd': -2,
+  ' ': 0
 };
-var varianceOfIndicatorIncrementTable = {
-  'Donut S': 0,
-  'Donut N': 0,
-  'Veg': 0,
-  'Noodle': 0,
-  's': 0, // sand roads are free
-  ' ': 0.01 // normal roads might have traffic jams
+var varianceOfIndicatorIncrementTable =  {
+  'G1': 0,
+  'G3': 0,
+  'G4': 0,
+  'd': 0,
+  ' ': 0
 };
+
 
 var f0 = world.feature, feature = function(s) {return extend(f0(s), {test: "hello"})};
 
@@ -124,6 +162,7 @@ var simulate = function(state, aleph) {
       r = expectedIndicatorIncrement(state, action),
       r2 = squared(r) + varianceOfIndicatorIncrement(state, action);
   var sa = [state, action];
+console.log(localPolicy);
   if (state.terminateAfterAction) {
     return { 
       trajectory: [sa], // sequence of [state, action] pairs
@@ -158,8 +197,10 @@ console.log("indicator has a std.dev. of", stddev,
             "which should equal", Math.sqrt(V2(mdp.startState, aleph0) - Math.pow(V(mdp.startState, aleph0),2)));
 
 console.log("Entropy of policy is", entropy(mdp.startState, aleph0));
-console.log("KL divergence from reference policy is", KLdiv(mdp.startState, aleph0));
+console.log("The max lambda is", params.maxLambda)
+console.log("The min lambda is", params.minLambda)
 
+console.log("KL divergence from reference policy is", KLdiv(mdp.startState, aleph0));
 if (inBrowser) {
   // simulate and show a single trajectory:
   var out = simulate(mdp.startState, aleph0);
@@ -170,7 +211,7 @@ if (inBrowser) {
 
 
 // Define the filename for the JSON file
-var filename = 'output_rotateminlambda.json';
+var filename = 'Grid6.json';
 
 // Read existing JSON data from the file (if it exists)
 var existingData = json.read(filename) || [];
@@ -182,8 +223,12 @@ var data1 = {
   key2: 'aleph0',
   value2: aleph0,
   key3: 'minlambda',
-  value3: params.minLambda
-  
+  value3: params.minLambda,
+  key4: 'maxLambda',
+  value4: params.maxLambda,
+  key5: 'Standard deviation',
+  value5: stddev
+
 };
 
 // Add new data to the existing data
@@ -191,4 +236,3 @@ existingData.push(data1);
 
 // Write the updated data back to the JSON file
 json.write(filename, existingData);
-
