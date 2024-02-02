@@ -34,6 +34,15 @@ module.exports = {
 
     setFrom: (arg) => new Set(arg),
 
+    objectFromPairs: (pairs) => {
+        var result = {};
+        for (var index in pairs) {
+            var [key, value] = pairs[index];
+            result[key] = value;
+        }
+        return result;
+    },
+
     min: (arr) => Math.min.apply(null, arr),
 
     max: (arr) => Math.max.apply(null, arr),

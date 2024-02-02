@@ -30,82 +30,85 @@ var env = getEnv(),
     messingPotential = agent.messingPotential_state,
     cupLoss = agent.cupLoss_state;
 
-// Generate and draw a trajectory:
-var simulate = function(state, aleph, _t) {
-  var t = _t ? _t : 0,
-      aleph4state = asInterval(aleph);
-  if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,"...");
-  var localPolicy = localPolicy(state, aleph4state),
-      actionAndAleph = sample(localPolicy),
-      action = actionAndAleph[0], 
-      aleph4action = actionAndAleph[1],
-      Edel = expectedDelta(state, action);
-  var stepData = {state, aleph4state, action, aleph4action, Edel};
-  if (state.terminateAfterAction) {
-    if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"(terminal)");
-    return { 
-      trajectory: [stepData], // sequence of [state, action] pairs
-      conditionalExpectedIndicator: Edel // expected indicator conditional on this trajectory
-    };
-  } else {
-    var nextState = transition(state, action),
-        nextAleph4state = propagateAspiration(state, action, aleph4action, Edel, nextState);
-    if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"nextAleph4state",nextAleph4state);
-    var nextOut = simulate(nextState, nextAleph4state, t+1);
-    return { 
-      trajectory: [stepData].concat(nextOut.trajectory), 
-      conditionalExpectedIndicator: Edel + nextOut.conditionalExpectedIndicator
-    };
-  }
-};
+console.log(JSON.stringify(getDynTree(agent, mdp.startState, aleph0)));
 
-console.log("aleph0", asInterval(aleph0));
+if (false) {
 
-var t0 =  webpplAgents.time();
-// verify meeting of expectations:
-console.log("V", V(startState, aleph0));
-console.log("TIME:", webpplAgents.time() - t0, "ms");
-console.log("cupLoss", cupLoss(mdp.startState, aleph0));
-console.log("entropy", entropy(mdp.startState, aleph0));
-console.log("KLdiv", KLdiv(mdp.startState, aleph0));
-console.log("messPot", messingPotential(mdp.startState, aleph0));
+  // Generate and draw a trajectory:
+  var simulate = function(state, aleph, _t) {
+    var t = _t ? _t : 0,
+        aleph4state = asInterval(aleph);
+    if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,"...");
+    var localPolicy = localPolicy(state, aleph4state),
+        actionAndAleph = sample(localPolicy),
+        action = actionAndAleph[0], 
+        aleph4action = actionAndAleph[1],
+        Edel = expectedDelta(state, action);
+    var stepData = {state, aleph4state, action, aleph4action, Edel};
+    if (state.terminateAfterAction) {
+      if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"(terminal)");
+      return { 
+        trajectory: [stepData], // sequence of [state, action] pairs
+        conditionalExpectedIndicator: Edel // expected indicator conditional on this trajectory
+      };
+    } else {
+      var nextState = transition(state, action),
+          nextAleph4state = propagateAspiration(state, action, aleph4action, Edel, nextState);
+      if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"nextAleph4state",nextAleph4state);
+      var nextOut = simulate(nextState, nextAleph4state, t+1);
+      return { 
+        trajectory: [stepData].concat(nextOut.trajectory), 
+        conditionalExpectedIndicator: Edel + nextOut.conditionalExpectedIndicator
+      };
+    }
+  };
 
-var gd = agent.getData, agentData = gd();
+  console.log("aleph0", asInterval(aleph0));
 
-// estimate distribution of trajectories:
+  var t0 =  webpplAgents.time();
+  // verify meeting of expectations:
+  console.log("V", V(startState, aleph0));
+  console.log("TIME:", webpplAgents.time() - t0, "ms");
+  console.log("cupLoss", cupLoss(mdp.startState, aleph0));
+  console.log("entropy", entropy(mdp.startState, aleph0));
+  console.log("KLdiv", KLdiv(mdp.startState, aleph0));
+  console.log("messPot", messingPotential(mdp.startState, aleph0));
 
-var trajDist = Infer({ model() {
-  return simulate(mdp.startState, aleph0).trajectory;
-}}).getDist();
+  var gd = agent.getData, agentData = gd();
 
-console.log("\nDATA FOR REGRESSION TESTS: \ntrajDist");
-var regressionTestData = webpplAgents.trajDist2simpleJSON(trajDist);
-console.log(JSON.stringify(regressionTestData));
-console.log("END OF DATA FOR REGRESSION TESTS\n");
+  // estimate distribution of trajectories:
 
-var trajData = trajDist2TrajData(trajDist, agent);
+  var trajDist = Infer({ model() {
+    return simulate(mdp.startState, aleph0).trajectory;
+  }}).getDist();
 
-//console.log("trajData", trajData);
+  console.log("\nDATA FOR REGRESSION TESTS: \ntrajDist");
+  var regressionTestData = webpplAgents.trajDist2simpleJSON(trajDist);
+  console.log(JSON.stringify(regressionTestData));
+  console.log("END OF DATA FOR REGRESSION TESTS\n");
 
-var locActionData = webpplAgents.trajDist2LocActionData(trajDist, trajData);
-console.log("locActionData", locActionData);
+  var trajData = trajDist2TrajData(trajDist, agent);
 
-console.log("\nminAdmissibleQ:");
-console.log(stateActionFct2ASCII(agent.minAdmissibleQ, agentData.stateActionPairs));
-console.log("\nmaxAdmissibleQ:");
-console.log(stateActionFct2ASCII(agent.maxAdmissibleQ, agentData.stateActionPairs));
+  //console.log("trajData", trajData);
 
-console.log("\nQ:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.Q));
-console.log("\ncupLoss:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.cupLoss));
-console.log("\nmessingPotential:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.messingPotential));
-console.log("\ncombinedLoss:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.combinedLoss));
+  var locActionData = webpplAgents.trajDist2LocActionData(trajDist, trajData);
+  console.log("locActionData", locActionData);
 
-console.log("\naction frequencies:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.actionFrequency));
+  console.log("\nminAdmissibleQ:");
+  console.log(stateActionFct2ASCII(agent.minAdmissibleQ, agentData.stateActionPairs));
+  console.log("\nmaxAdmissibleQ:");
+  console.log(stateActionFct2ASCII(agent.maxAdmissibleQ, agentData.stateActionPairs));
 
+  console.log("\nQ:");
+  console.log(webpplAgents.locActionData2ASCII(locActionData.Q));
+  console.log("\ncupLoss:");
+  console.log(webpplAgents.locActionData2ASCII(locActionData.cupLoss));
+  console.log("\nmessingPotential:");
+  console.log(webpplAgents.locActionData2ASCII(locActionData.messingPotential));
+  console.log("\ncombinedLoss:");
+  console.log(webpplAgents.locActionData2ASCII(locActionData.combinedLoss));
 
+  console.log("\naction frequencies:");
+  console.log(webpplAgents.locActionData2ASCII(locActionData.actionFrequency));
 
+}

@@ -1221,6 +1221,8 @@ var makeMDPAgentSatisfia = function(params_, world) {
     };
 
     return { 
+      transitionDistribution, 
+      expectedDelta, varianceOfDelta, skewnessOfDelta, excessKurtosisOfDelta,
       minAdmissibleQ, maxAdmissibleQ, minAdmissibleV, maxAdmissibleV,
       localPolicy, localPolicyData, propagateAspiration,
       Q, V, Q2, V2, Q_DeltaSquare, V_DeltaSquare, Q_ones, V_ones,

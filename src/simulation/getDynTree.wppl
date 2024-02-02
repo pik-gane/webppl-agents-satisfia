@@ -1,0 +1,50 @@
+// test with
+// $ webppl --require webppl-dp --require . examples/runVerySimpleGW.wppl -- --gw=GW4
+
+var getDynTree = function(agent, state, aleph) {
+    /*  Construct a tree that represents all possible histories starting at state with aspiration aleph.
+        Return value has format
+       
+        {action1: [aleph4action, actionLogit, {nextState1: [aleph4state, nextStateLogit, Edel, nextStateBranch],
+                                               nextState2: [aleph4state, nextStateLogit, Edel, nextStateBranch],
+                                               ...}],
+         action2: [aleph4action, actionLogit, {nextState1: [aleph4state, nextStateLogit, Edel, nextStateBranch],
+                                               nextState2: [aleph4state, nextStateLogit, Edel, nextStateBranch],
+                                               ...}],
+         ...}
+
+        where
+          - action1, action2, ... are the actions available at state
+            - aleph4action is the aspiration for the action
+            - actionLogit is the logit for the action according to the local policy
+            - nextState1, nextState2, ... are the possible next states
+            - aleph4state is the aspiration for the next state
+            - nextStateLogit is the logit for the next state according to the transition distribution
+            - Edel is the expected delta for the action
+            - nextStateBranch is the tree for the next state
+    */
+    var localPolicy = agent.localPolicy,
+        expectedDelta = agent.expectedDelta,
+        transitionDistribution = agent.transitionDistribution,
+        propagateAspiration = agent.propagateAspiration,
+        locPol = localPolicy(state, asInterval(aleph));
+    var stateBranch = webpplAgents.objectFromPairs(map(function(actionAndAleph) {
+            var action = actionAndAleph[0], 
+                aleph4action = actionAndAleph[1],
+                actionLogit = locPol.score(actionAndAleph),
+                Edel = expectedDelta(state, action);
+            if (state.terminateAfterAction) {
+                return [action, [aleph4action, actionLogit]];
+            } else {
+                var transDist = transitionDistribution(state, action),
+                    actionBranch = webpplAgents.objectFromPairs(map(function(nextState) {
+                        var nextStateLogit = transDist.score(nextState),
+                            nextAleph4state =  propagateAspiration(state, action, aleph4action, Edel, nextState);
+                        var nextStateBranch = getDynTree(agent, nextState, nextAleph4state);
+                        return [JSON.stringify(nextState), [nextAleph4state, nextStateLogit, Edel, nextStateBranch]];
+                    }, transDist.support()));
+                return [action, [aleph4action, actionLogit, actionBranch]];
+            }
+        }, locPol.support()));
+    return stateBranch;
+};
