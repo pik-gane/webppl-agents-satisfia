@@ -8,6 +8,7 @@
     "@mapbox/node-pre-gyp": "^1.0.11",
     "canvas": "^2.11.2",
     "jsdom": "^8.0.0",
+    "object-hash": "^3.0.0",
     "paper": "^0.9.25",
     "underscore": "^1.8.3",
     "webppl-call-async": "github:null-a/webppl-call-async",

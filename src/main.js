@@ -1,3 +1,10 @@
+// 
+
+const dynamicTrees = require('./dynamic-trees')
+const PrefixTree = dynamicTrees.structure.PrefixTree
+const TrajectoriesDistributionForwardDiagramVisitor = dynamicTrees.visitors.forward
+const TrajectoriesDistributionBackwardDiagramVisitor = dynamicTrees.visitors.backward
+
 // TODO: how to move the functions to other js files and still make them available in webppl code??? 
 
 var locActionData2ASCIIdefaultFormat = function (x) {
@@ -182,6 +189,33 @@ module.exports = {
             result.push(res);
         }
         return result;
+    },
+
+    debug: {
+        inspect: function(...args) {
+            const util = require('util')
+            return util.inspect(...args)
+        },
+        trajectoriesDistribution: {
+            diagrams: {
+                forward: function (data) {
+                    const distribution = data.getDist()
+                    const result = new PrefixTree()
+                    for(var key in distribution) {
+                        TrajectoriesDistributionForwardDiagramVisitor.visit(result, JSON.parse(key), distribution[key])
+                    }
+                    return result
+                },
+                backward: function(data) {
+                    const distribution = data.getDist()
+                    const result = new PrefixTree()
+                    for(var key in distribution) {
+                        TrajectoriesDistributionBackwardDiagramVisitor.visit(result, JSON.parse(key), distribution[key])
+                    }
+                    return result
+                }
+            }
+        }
     },
 
     // TO BE MOVED TO src/utils/metalog.js:
