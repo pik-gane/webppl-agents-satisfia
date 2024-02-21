@@ -1,5 +1,9 @@
 // run via  webppl --require webppl-dp --require . examples/runVerySimpleGW.wppl
-
+                              
+var _W = webpplAgents;
+var _SU = webpplAgents.satisfia;
+var _PP = webpplAgents.pretty;
+                              
 var env = getEnv(),
     argv = env.argv,
     params = extend({
@@ -45,6 +49,7 @@ var simulate = function(state, aleph, _t) {
     if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"(terminal)");
     return { 
       trajectory: [stepData], // sequence of [state, action] pairs
+      tr4viz: [state],
       conditionalExpectedIndicator: Edel // expected indicator conditional on this trajectory
     };
   } else {
@@ -54,6 +59,7 @@ var simulate = function(state, aleph, _t) {
     var nextOut = simulate(nextState, nextAleph4state, t+1);
     return { 
       trajectory: [stepData].concat(nextOut.trajectory), 
+      tr4viz: [state].concat(nextOut.tr4viz),
       conditionalExpectedIndicator: Edel + nextOut.conditionalExpectedIndicator
     };
   }
@@ -61,10 +67,10 @@ var simulate = function(state, aleph, _t) {
 
 console.log("aleph0", asInterval(aleph0));
 
-var t0 =  webpplAgents.time();
+var t0 =  _SU.time();
 // verify meeting of expectations:
 console.log("V", V(startState, aleph0));
-console.log("TIME:", webpplAgents.time() - t0, "ms");
+console.log("TIME:", _SU.time() - t0, "ms");
 console.log("cupLoss", cupLoss(mdp.startState, aleph0));
 console.log("entropy", entropy(mdp.startState, aleph0));
 console.log("KLdiv", KLdiv(mdp.startState, aleph0));
@@ -74,12 +80,14 @@ var gd = agent.getData, agentData = gd();
 
 // estimate distribution of trajectories:
 
+var sym = simulate(mdp.startState, aleph0);
+
 var trajDist = Infer({ model() {
-  return simulate(mdp.startState, aleph0).trajectory;
+  return sym.trajectory;
 }}).getDist();
 
 console.log("\nDATA FOR REGRESSION TESTS: \ntrajDist");
-var regressionTestData = webpplAgents.trajDist2simpleJSON(trajDist);
+var regressionTestData = _PP.trajDist2simpleJSON(trajDist);
 console.log(JSON.stringify(regressionTestData));
 console.log("END OF DATA FOR REGRESSION TESTS\n");
 
@@ -87,7 +95,7 @@ var trajData = trajDist2TrajData(trajDist, agent);
 
 //console.log("trajData", trajData);
 
-var locActionData = webpplAgents.trajDist2LocActionData(trajDist, trajData);
+var locActionData = _SU.trajDist2LocActionData(trajDist, trajData);
 console.log("locActionData", locActionData);
 
 console.log("\nminAdmissibleQ:");
@@ -96,16 +104,22 @@ console.log("\nmaxAdmissibleQ:");
 console.log(stateActionFct2ASCII(agent.maxAdmissibleQ, agentData.stateActionPairs));
 
 console.log("\nQ:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.Q));
+console.log(_PP.locActionData2ASCII(locActionData.Q));
 console.log("\ncupLoss:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.cupLoss));
+console.log(_PP.locActionData2ASCII(locActionData.cupLoss));
 console.log("\nmessingPotential:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.messingPotential));
+console.log(_PP.locActionData2ASCII(locActionData.messingPotential));
 console.log("\ncombinedLoss:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.combinedLoss));
+console.log(_PP.locActionData2ASCII(locActionData.combinedLoss));
 
 console.log("\naction frequencies:");
-console.log(webpplAgents.locActionData2ASCII(locActionData.actionFrequency));
+console.log(_PP.locActionData2ASCII(locActionData.actionFrequency));
 
 
+var tr=sym.tr4viz;
+console.log(tr);
+console.log(tr[0].loc);
+console.log(tr[1].loc);
+
+_W.draw(world, {trajectory:tr});
 

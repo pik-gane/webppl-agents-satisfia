@@ -88,13 +88,15 @@ where not Q but the policy directly is represented by an ANN.
 
 
 var _W = webpplAgents;
+var _SU = webpplAgents.satisfia;
+var _PP = webpplAgents.pretty;
 
 var makeMDPAgentSatisfia = function(params_, world) {
 
     // uncomment later once we want to do anything with the metalog distribution:
     // var metalog = getMetalog(); // needed to enable metalog distribution used in loss function
     
-    var stateActionPairsSet = _W.emptySet(); // to be able to later loop over all state-action pairs visited
+    var stateActionPairsSet = _SU.emptySet(); // to be able to later loop over all state-action pairs visited
 
     // extend default parameters and options by supplied ones:
     var params = extend(extend({
@@ -263,8 +265,8 @@ var makeMDPAgentSatisfia = function(params_, world) {
       var actions = stateToActions(state),
           qs = map(function(a) { return maxAdmissibleQ(state, a); }, actions),  // ! recursion here !
           v = maxLambda == 1 
-              ? _W.max(qs) 
-              : interpolate(_W.min(qs), maxLambda, _W.max(qs));
+              ? _SU.max(qs) 
+              : interpolate(_SU.min(qs), maxLambda, _SU.max(qs));
       if (verbose || debug) console.log(pad(state),"| | | maxAdmissibleV, state",prettyState(state),":",v);
       return v;
     });
@@ -289,8 +291,8 @@ var makeMDPAgentSatisfia = function(params_, world) {
       var actions = stateToActions(state);
       var qs = map(function(action) { return minAdmissibleQ(state, action); }, actions),  // ! recursion here !
           v = minLambda == 0 
-              ? _W.min(qs)
-              : interpolate(_W.min(qs), minLambda, _W.max(qs));
+              ? _SU.min(qs)
+              : interpolate(_SU.min(qs), minLambda, _SU.max(qs));
       if (verbose || debug) console.log(pad(state),"| | | minAdmissibleV, state",prettyState(state),":",v);
       return v;
     });
@@ -598,7 +600,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
 
       if (verbose || debug) {
         console.log(pad(state),"| localPolicy, state",prettyState(state),"aleph",aleph,":");
-        _W.printPolicy(pad(state), support, ps);
+        _PP.printPolicy(pad(state), support, ps);
       }
       return [support, ps];
 
@@ -1215,7 +1217,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
 
     var getData = function() {
       var stateActionPairs = Array.from(stateActionPairsSet),
-          states = Array.from(_W.setFrom(map(function(pair) { return pair[0]; }, stateActionPairs))),
+          states = Array.from(_SU.setFrom(map(function(pair) { return pair[0]; }, stateActionPairs))),
           locs = map(function(state) { return state.loc; }, states);
       return { states, stateActionPairs, locs };
     };
