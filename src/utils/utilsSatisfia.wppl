@@ -1,5 +1,9 @@
 // pretty-printing:
 
+var _W = webpplAgents;
+var _SU = webpplAgents.satisfia;
+var _PP = webpplAgents.pretty;
+
 var prettyState = function (state) { return "(" + state.loc[0] + "," + state.loc[1] + ")-" + state.timeLeft; };
 
 var pad = function(state) { return " :    ".repeat(Math.max(0, 10 - state.timeLeft)); }
@@ -93,7 +97,7 @@ var stateActionFct2table = function(stateActionFct, stateActionPairs) {
 
 var stateActionFct2ASCII = function(stateActionFct, stateActionPairs) {
     var tbl = stateActionFct2table(stateActionFct, stateActionPairs);
-    return webpplAgents.locActionData2ASCII(webpplAgents.stateActionData2locActionData(tbl, stateActionPairs));
+    return _PP.locActionData2ASCII(_SU.stateActionData2locActionData(tbl, stateActionPairs));
 };
 
 var trajDist2TrajData = function(trajDist, agent) {

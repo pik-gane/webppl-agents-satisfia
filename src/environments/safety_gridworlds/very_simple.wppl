@@ -12,8 +12,7 @@ var VerySimpleGW = function(gw, parms, time, timeOutDelta) {
         world = mdp.world,
         stateToActions0 = world.stateToActions,
         startState = mdp.startState,
-        f0 = world.feature, 
-        feature = function(s) {return extend(f0(s), {test: "TODO: what does this do?"})},
+        feature = world.feature, 
         expectedDelta = tableToExpectedDeltaFct(d.expectedDeltaTable, feature, d.timeOutDelta || timeOutDelta),
         uninformedPolicy = UniformGridPolicy(),
         referencePolicy = UniformGridPolicy(),
@@ -31,7 +30,7 @@ var VerySimpleGW = function(gw, parms, time, timeOutDelta) {
         },
         our_world = { transition: world.transition, stateToActions, feature };
 
-    return { world: our_world, expectedDelta, uninformedPolicy, referencePolicy, startState, aleph0: d.aleph0 };
+    return { world: our_world,orig_world: world, expectedDelta, uninformedPolicy, referencePolicy, startState, aleph0: d.aleph0 };
   };
 
   if (gw == "GW1" || gw === undefined) {

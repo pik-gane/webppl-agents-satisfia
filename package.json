@@ -2,22 +2,21 @@
   "name": "webppl-agents",
   "version": "1.0.0",
   "description": "Webppl library for MDP and POMDP agent models and for generating Gridworld and Bandit problems. JS library for displaying Gridworld.",
-  "old_main": "src/visualization/gridworld.js",
   "main": "src/main.js",
   "dependencies": {
-    "@mapbox/node-pre-gyp": "^1.0.11",
-    "canvas": "^2.11.2",
-    "jsdom": "^8.0.0",
-    "paper": "^0.9.25",
-    "underscore": "^1.8.3",
-    "webppl-call-async": "github:null-a/webppl-call-async",
-    "webppl-editor": "github:probmods/webppl-editor",
-    "webppl-json": "^0.0.1",
-    "webppl-timeit": "^0.3.0",
-    "webppl-viz": "github:probmods/webppl-viz"
+    "paper": "0.12.4",
+    "underscore": "1.8.3"
+  },
+  "peerDependencies": {
+    "webppl": "github:probmods/webppl",
+    "webppl-dp": "0.1.1"
+  },
+  "devDependencies": {
+    "jsdom": "14.1.0",
+    "canvas": "2.11.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./test.sh"
   },
   "webppl": {
     "wppl": [
@@ -45,13 +44,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agentmodels/webppl-agents.git"
+    "url": "git+https://github.com/pik-gane/webppl-agents-satisfia.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/agentmodels/webppl-agents/issues"
+    "url": "https://github.com/pik-gane/webppl-agents-satisfia/issues"
   },
-  "homepage": "https://github.com/agentmodels/webppl-agents#readme"
+  "homepage": "https://github.com/pik-gane/webppl-agents-satisfia#readme"
 }
