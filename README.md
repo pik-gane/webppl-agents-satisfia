@@ -2,6 +2,10 @@
 
 Extension of webppl-agents with [additional non-maximizing agent types](/src/agents/makeMDPAgentSatisfia.wppl)
 
+Intelligent agents that satisfy aspirations. This is part of the SatisfIA project. That project's main code repository is [satisfia](https://github.com/pik-gane/satisfia).
+
+![image](https://github.com/pik-gane/webppl-agents-satisfia/assets/22815964/00ddc643-710b-42cc-b1a5-cde382fe1d3f)
+
 To test:
 ```
 ./run.sh examples/runVerySimpleGW.wppl -- --gw GW3 --verbose
