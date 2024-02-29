@@ -1215,6 +1215,15 @@ var makeMDPAgentSatisfia = function(params_, world) {
       return res;
     });
 
+    // alternative, nonlinear loss, as an example to be used in the webbook:
+    var combinedLoss_alt = dp.cache(function(s, a, al4s, al4a, p) { 
+      // cheap criteria, including some myopic versions of the more expensive ones:
+      var lFeasibilityPower = lossCoeff4FeasibilityPower != 0 ? lossCoeff4FeasibilityPower * squared(maxAdmissibleQ(s, a) - minAdmissibleQ(s, a)) : 0,
+          lMP = lossCoeff4MP != 0 ? lossCoeff4MP * messingPotential_action(s, a) : 0;
+
+      return max(lFeasibilityPower, lMP);
+    });
+
     var getData = function() {
       var stateActionPairs = Array.from(stateActionPairsSet),
           states = Array.from(_SU.setFrom(map(function(pair) { return pair[0]; }, stateActionPairs))),

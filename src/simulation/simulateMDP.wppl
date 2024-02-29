@@ -49,6 +49,41 @@ var simulateMDPAgentHyperbolic = function(startState, world, agent, outputType) 
   return sampleSequence(startState);
 };
 
+var simulateMDPAgentSatisfia = function(mdp, agent, state, aleph, options, _t) {
+  var t = _t ? _t : 0,
+      aleph4state = asInterval(aleph);
+  if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,"...");
+  var lp = agent.localPolicy,
+      localPolicy = lp(state, aleph4state),
+      actionAndAleph = sample(localPolicy),
+      action = actionAndAleph[0], 
+      aleph4action = actionAndAleph[1],
+      ed = mdp.expectedDelta,
+      Edel = ed(state, action);
+  var stepData = {state, aleph4state, action, aleph4action, Edel};
+  if (state.terminateAfterAction) {
+    if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"(terminal)");
+    return { 
+      trajectory: [stepData], // sequence of [state, action] pairs
+      tr4viz: [state],
+      conditionalExpectedTotal: Edel // expected Total conditional on this state trajectory
+    };
+  } else {
+    var w = mdp.world, 
+        tr = w.transition,
+        nextState = tr(state, action),
+        pa = agent.propagateAspiration,
+        nextAleph4state = pa(state, action, aleph4action, Edel, nextState);
+    if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"nextAleph4state",nextAleph4state);
+    var nextOut = simulateMDPAgentSatisfia(mdp, agent, nextState, nextAleph4state, options, t+1);
+    return { 
+      trajectory: [stepData].concat(nextOut.trajectory), 
+      tr4viz: [state].concat(nextOut.tr4viz),
+      conditionalExpectedTotal: Edel + nextOut.conditionalExpectedTotal
+    };
+  }
+};
+
 
 var simulateMDP = function(startState, world, agent, outputType) {
   var params = agent.params;
