@@ -113,7 +113,7 @@ var agent = makeMDPAgentSatisfia(extend(params, {
 var getLocalPolicy = agent.getLocalPolicy, propagateAspiration = agent.propagateAspiration,
     getAspiration4state = agent.getAspiration4state, 
     V = agent.V, V2 = agent.V2,
-    behaviorEntropy_state = agent.entropy, behaviorKLdiv = agent.KLdiv;
+    entropy = agent.entropy, KLdiv = agent.KLdiv;
 
 // Generate and draw a trajectory:
 var simulate = function(state, aleph) {
@@ -156,8 +156,8 @@ stddev = Math.sqrt(expectedSquaredIndicator - Math.pow(expectedIndicator,2));
 console.log("indicator has a std.dev. of", stddev, 
             "which should equal", Math.sqrt(V2(mdp.startState, aleph0) - Math.pow(V(mdp.startState, aleph0),2)));
 
-console.log("Entropy of policy is", behaviorEntropy_state(mdp.startState, aleph0));
-console.log("KL divergence from reference policy is", behaviorKLdiv(mdp.startState, aleph0));
+console.log("Entropy of policy is", entropy(mdp.startState, aleph0));
+console.log("KL divergence from reference policy is", KLdiv(mdp.startState, aleph0));
 
 if (inBrowser) {
   // simulate and show a single trajectory:

@@ -455,10 +455,12 @@ var makeMDPAgentSatisfia = function(params_, world) {
         // If a1's admissibility interval is completely contained in aleph4state, we are done:
         if (isSubsetOf(adm1, aleph4state)) {
 
-          if (verbose || debug) console.log(pad(state),"| | localPolicyData, state",prettyState(state),"aleph4state",aleph4state,": a1",a1,"adm1",adm1,"(subset of aleph4state)");
+          if (verbose || debug) console.log(pad(state),"| localPolicyData, state",prettyState(state),"aleph4state",aleph4state,": a1",a1,"adm1",adm1,"(subset of aleph4state)");
           return [a1, adm1];
 
         } else {
+
+          if (verbose || debug) console.log(pad(state),"| localPolicyData, state",prettyState(state),"aleph4state",aleph4state,": a1",a1,"adm1",adm1,"(need to draw a 2nd a)...");
 
           // For drawing the second action, restrict actions so that the the midpoint of aleph4state can be mixed from
           // those of estAlephs4action of the first and second action:
