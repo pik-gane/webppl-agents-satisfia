@@ -117,14 +117,14 @@ var makeMDPAgentSatisfia = function(params_, world) {
       lossCoeff4KLdiv1: 1, // weight of current-state KL divergence in loss function, must be >= 0
       // coefficients for expensive to compute loss functions (all zero by default except for variance):
       lossCoeff4Variance: 1, // weight of variance of total in loss function, must be >= 0
-      lossCoeff4Fourth: 1, // weight of centralized fourth moment of total in loss function, must be >= 0
-      lossCoeff4Cup: 1, // weight of "cup" loss component, based on sixth moment of total, must be >= 0
-      lossCoeff4LRA: 1, // weight of deviation of LRA from 0.5 in loss function, must be >= 0
-      lossCoeff4Time: 1, // weight of time in loss function, must be >= 0
-      lossCoeff4DeltaVariation: 1, // weight of variation of Delta in loss function, must be >= 0
-      lossCoeff4Entropy: 1, // weight of action entropy in loss function, must be >= 0
-      lossCoeff4KLdiv: 1, // weight of KL divergence in loss function, must be >= 0
-      lossCoeff4OtherLoss: 1, // weight of other loss components specified by otherLossIncrement, must be >= 0
+      lossCoeff4Fourth: 0, // weight of centralized fourth moment of total in loss function, must be >= 0
+      lossCoeff4Cup: 0, // weight of "cup" loss component, based on sixth moment of total, must be >= 0
+      lossCoeff4LRA: 0, // weight of deviation of LRA from 0.5 in loss function, must be >= 0
+      lossCoeff4Time: 0, // weight of time in loss function, must be >= 0
+      lossCoeff4DeltaVariation: 0, // weight of variation of Delta in loss function, must be >= 0
+      lossCoeff4Entropy: 0, // weight of action entropy in loss function, must be >= 0
+      lossCoeff4KLdiv: 0, // weight of KL divergence in loss function, must be >= 0
+      lossCoeff4OtherLoss: 0, // weight of other loss components specified by otherLossIncrement, must be >= 0
       allowNegativeCoeffs: false, // if true, allow negative loss coefficients
     }, params_), { options: extend(extend({
       verbose: false,  // if true, print explanatory messages
@@ -440,7 +440,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
             return Math.min(1e100, Math.max(Math.exp(-loss / lossTemperature), 1e-100)); 
           }, indices);
 
-      if (verbose || debug) console.log(pad(state),"| localPolicyData", prettyState(state), aleph, actions, {propensities});
+      if (debug) console.log(pad(state),"| localPolicyData", prettyState(state), aleph, actions, {propensities});
 
       // now we can construct the local policy as a WebPPL distribution object:
       var locPol = Infer({ model() {

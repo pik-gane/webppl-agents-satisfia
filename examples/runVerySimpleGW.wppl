@@ -31,6 +31,7 @@ var env = getEnv(),
 var t0 =  _SU.time();
 // verify meeting of expectations:
 console.log("\nV", V(startState, aleph0),"\n");
+console.log("\Variance", V2(startState, aleph0)-V(startState, aleph0)*V(startState, aleph0),"\n");
 console.log("\nTIME:", _SU.time() - t0, "ms\n");
 console.log("\ncupLoss", cupLoss_state(mdp.startState, aleph0),"\n");
 console.log("\nentropy", behaviorEntropy_state(mdp.startState, aleph0),"\n");
@@ -42,6 +43,8 @@ var gd = agent.getData, agentData = gd();
 // estimate distribution of trajectories:
 
 var sym = simulateMDPAgentSatisfia(mdp, agent, mdp.startState, aleph0, argv); // simulate(mdp.startState, aleph0);
+
+console.log(sym.trajectory);
 
 var trajDist = Infer({ model() {
   return sym.trajectory;

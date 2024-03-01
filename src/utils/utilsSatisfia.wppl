@@ -77,8 +77,8 @@ var tableToExpectedDeltaFct = function(table, feature, timeOutDelta) {
     return function(state, unused_action) {
         var f = feature(state), 
             stateFeatureName = f.name, 
-            Edel = state.timeLeft > 1 ? (stateFeatureName ? table[stateFeatureName] : table[f['0']]) 
-                 : (timeOutDelta || -1000);
+            Edel = state.timeLeft > 0 ? (stateFeatureName ? table[stateFeatureName] : table[f['0']]) 
+                 : (timeOutDelta === undefined ? -1000 : timeOutDelta);
         return Edel;
     };
 };
