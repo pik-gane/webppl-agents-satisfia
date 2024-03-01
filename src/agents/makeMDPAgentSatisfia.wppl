@@ -439,9 +439,9 @@ var makeMDPAgentSatisfia = function(params_, world) {
                 loss = combinedLoss(state, action, aleph4state, estAlephs1[index], 1 / indices.length);  // ! bottleneck !
             return loss;
           }, indices),
-          meanLoss = sum(losses) / indices.length,
+          minLoss = _SU.min(losses),
           propensities = map(function(loss) { 
-            return Math.min(1e100, Math.max(Math.exp(-(loss-meanLoss) / lossTemperature), 1e-100)); 
+            return Math.max(Math.exp(-(loss-minLoss) / lossTemperature), 1e-100); 
           }, losses);
 
       if (debug) console.log(pad(state),"| localPolicyData", prettyState(state), aleph, actions, {propensities});
@@ -486,9 +486,9 @@ var makeMDPAgentSatisfia = function(params_, world) {
                     loss = combinedLoss(state, action, aleph4state, estAlephs2[index], 1 / indices2.length);
                 return loss;
               }, indices2),
-              meanLoss2 = sum(losses2) / indices2.length,
+              meanLoss2 = _SU.min(losses2),
               propensities2 = map(function(loss) { 
-                return Math.min(1e100, Math.max(Math.exp(-(loss-meanLoss2) / lossTemperature), 1e-100)); 
+                return Math.max(Math.exp(-(loss-meanLoss2) / lossTemperature), 1e-100); 
               }, losses2);
 
           if (debug) console.log(pad(state),"| | localPolicyData", prettyState(state), aleph4state, {a1, midTarget, estAleph1, mid1, indices2, aleph2target, estAlephs2, propensities2});

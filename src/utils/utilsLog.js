@@ -68,7 +68,7 @@ const locActionData2ASCII= function(
 
 const printPolicy= function(padding, support, ps) {
     for (var i = 0; i < support.length; i++) {
-        console.log(padding, "| | action", support[i][0], "aspiration", support[i][1], "prob.", ps[i]);
+        console.log(padding, "| |   action", support[i][0], "aspiration", support[i][1], "prob.", ps[i]);
     }
 };
 
