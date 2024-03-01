@@ -228,7 +228,7 @@ var VerySimpleGW = function(gw, parms, _time, timeOutDelta) {
           '9': 9,
           ' ': 0
         },
-        aleph0: 25,
+        aleph0: 5,
         totalTime: 2,
         timeOutDelta: 0
       });

@@ -26,6 +26,7 @@ var isAllowedState_ = function(gridMap, loc) {
 
 var advanceStateTime = function(state) {
   return extend(state, {
+    t: state.t + 1,
     timeLeft: state.timeLeft - 1,
     terminateAfterAction: state.timeLeft - 1 > 1 ? state.terminateAfterAction : true,
     previousLoc: state.loc
@@ -226,7 +227,8 @@ var makeGridWorldMDP = function(options) {
   var startState = {
     loc: options.start,
     terminateAfterAction: false,
-    timeLeft: options.totalTime
+    timeLeft: options.totalTime,
+    t: 0
   };
 
   // assumes that utilities are only defined on named features and timeCost
