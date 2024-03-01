@@ -117,19 +117,19 @@ var makeMDPAgentSatisfia = function(params_, world) {
       lossCoeff4KLdiv1: 1, // weight of current-state KL divergence in loss function, must be >= 0
       // coefficients for expensive to compute loss functions (all zero by default except for variance):
       lossCoeff4Variance: 1, // weight of variance of total in loss function, must be >= 0
-      lossCoeff4Fourth: 0, // weight of centralized fourth moment of total in loss function, must be >= 0
-      lossCoeff4Cup: 0, // weight of "cup" loss component, based on sixth moment of total, must be >= 0
-      lossCoeff4LRA: 0, // weight of deviation of LRA from 0.5 in loss function, must be >= 0
-      lossCoeff4Time: 0, // weight of time in loss function, must be >= 0
-      lossCoeff4DeltaVariation: 0, // weight of variation of Delta in loss function, must be >= 0
-      lossCoeff4Entropy: 0, // weight of action entropy in loss function, must be >= 0
-      lossCoeff4KLdiv: 0, // weight of KL divergence in loss function, must be >= 0
-      lossCoeff4OtherLoss: 0, // weight of other loss components specified by otherLossIncrement, must be >= 0
+      lossCoeff4Fourth: 1, // weight of centralized fourth moment of total in loss function, must be >= 0
+      lossCoeff4Cup: 1, // weight of "cup" loss component, based on sixth moment of total, must be >= 0
+      lossCoeff4LRA: 1, // weight of deviation of LRA from 0.5 in loss function, must be >= 0
+      lossCoeff4Time: 1, // weight of time in loss function, must be >= 0
+      lossCoeff4DeltaVariation: 1, // weight of variation of Delta in loss function, must be >= 0
+      lossCoeff4Entropy: 1, // weight of action entropy in loss function, must be >= 0
+      lossCoeff4KLdiv: 1, // weight of KL divergence in loss function, must be >= 0
+      lossCoeff4OtherLoss: 1, // weight of other loss components specified by otherLossIncrement, must be >= 0
       allowNegativeCoeffs: false, // if true, allow negative loss coefficients
-    }, params_), { options: extend({
+    }, params_), { options: extend(extend({
       verbose: false,  // if true, print explanatory messages
       debug: false  // if true, print extensive debugging messages
-    }, params_.options) });
+    }, params_), params_.options) });
   
     // extract parameters, options, and world:
     var stateToActions = world.stateToActions,  // function(state)
@@ -248,7 +248,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // or of the LRA-based problem (if maxLambda<1):
     // ! recursive function:
     var maxAdmissibleQ = dp.cache(function(state, action){
-      if (verbose || debug) console.log(pad(state),"| | | maxAdmissibleQ, state",prettyState(state),"action",action,"...");
+      if (verbose || debug) console.log(pad(state),"| | | | maxAdmissibleQ, state",prettyState(state),"action",action,"...");
       stateActionPairsSet.add([state,action]); // register (state, action) in global store (could be anywhere, but here is just as fine as anywhere else)
       var Edel = expectedDelta(state, action),
           q = state.terminateAfterAction 
@@ -256,7 +256,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
               : Edel + expectation(Infer({ model() { 
                 return maxAdmissibleV(transition(state, action));  // ! recursion here ! 
               }}));  // Bellman equation
-      if (verbose || debug) console.log(pad(state),"| | | maxAdmissibleQ, state",prettyState(state),"action",action,":",q);
+      if (verbose || debug) console.log(pad(state),"| | | | ╰ maxAdmissibleQ, state",prettyState(state),"action",action,":",q);
       return q;
     });
     // ! recursive function:
@@ -267,7 +267,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
           v = maxLambda == 1 
               ? _SU.max(qs) 
               : interpolate(_SU.min(qs), maxLambda, _SU.max(qs));
-      if (verbose || debug) console.log(pad(state),"| | | maxAdmissibleV, state",prettyState(state),":",v);
+      if (verbose || debug) console.log(pad(state),"| | | ╰ maxAdmissibleV, state",prettyState(state),":",v);
       return v;
     });
   
@@ -275,14 +275,14 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // or of the LRA-based problem (if minLambda>0):
     // ! recursive function:
     var minAdmissibleQ = dp.cache(function(state, action){
-      if (verbose || debug) console.log(pad(state),"| | | minAdmissibleQ, state",prettyState(state),"action",action,"...");
+      if (verbose || debug) console.log(pad(state),"| | | | minAdmissibleQ, state",prettyState(state),"action",action,"...");
       var Edel = expectedDelta(state, action),
           q = state.terminateAfterAction 
               ? Edel 
               : Edel + expectation(Infer({ model() { 
                 return minAdmissibleV(transition(state, action));  // ! recursion here !
               }}));
-      if (verbose || debug) console.log(pad(state),"| | | minAdmissibleQ, state",prettyState(state),"action",action,":",q);
+      if (verbose || debug) console.log(pad(state),"| | | | ╰ minAdmissibleQ, state",prettyState(state),"action",action,":",q);
       return q;
     });
     // ! recursive function:
@@ -293,7 +293,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
           v = minLambda == 0 
               ? _SU.min(qs)
               : interpolate(_SU.min(qs), minLambda, _SU.max(qs));
-      if (verbose || debug) console.log(pad(state),"| | | minAdmissibleV, state",prettyState(state),":",v);
+      if (verbose || debug) console.log(pad(state),"| | | ╰ minAdmissibleV, state",prettyState(state),":",v);
       return v;
     });
 
@@ -313,7 +313,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     var aspiration4state = dp.cache(function(state, unclippedAleph){
       if (verbose || debug) console.log(pad(state),"| | aspiration4state, state",prettyState(state),"unclippedAleph",unclippedAleph,"...");
       var res = clip(minAdmissibleV(state), asInterval(unclippedAleph), maxAdmissibleV(state));
-      if (verbose || debug) console.log(pad(state),"| | aspiration4state, state",prettyState(state),"unclippedAleph",unclippedAleph,":",res);
+      if (verbose || debug) console.log(pad(state),"| | ╰ aspiration4state, state",prettyState(state),"unclippedAleph",unclippedAleph,":",res);
       return res;
     });
   
@@ -321,11 +321,11 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // that does not depend on the local policy but is simply based on the state's aspiration interval,
     // moved from the admissibility interval of the state to the admissibility interval of the action.
     var estAspiration4action = dp.cache(function(state, action, aleph4state){
-      if (/*verbose ||*/ debug) console.log("| | estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,"...");
+      if (verbose || debug) console.log(pad(state),"| | estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,"...");
       var phi = admissibility4action(state, action);
       if (isSubsetOf(phi, aleph4state)) {
 
-        if (verbose || debug) console.log(pad(state),"| | estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,":",phi,"(subset of aleph4state)");
+        if (verbose || debug) console.log(pad(state),"| | ╰ estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,":",phi,"(subset of aleph4state)");
         return phi;
 
       } else {
@@ -352,7 +352,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
 */
         var res = steadfast;  // WAS: interpolate(steadfast, rescaling4Actions, rescaled);
 
-        if (verbose || debug) console.log(pad(state),"| | estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,":",res,"(steadfast)");  // WAS: "(steadfast/rescaled)");
+        if (verbose || debug) console.log(pad(state),"| | ╰ estAspiration4action, state",prettyState(state),"action",action,"aleph4state",aleph4state,":",res,"(steadfast)");  // WAS: "(steadfast/rescaled)");
         return res;
       }
     });
@@ -378,6 +378,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // recursive function:
     var messingPotential_action = dp.cache(function(state, action) {
       // Note for ANN approximation: messingPotential_action can be positive or negative. 
+      if (verbose || debug) console.log(pad(state),"| | | messingPotential_action, state",prettyState(state),"action",action,"...");
       var MP = expectation(Infer({ model() {
             if (state.terminateAfterAction){
               return 0;
@@ -389,13 +390,16 @@ var makeMDPAgentSatisfia = function(params_, world) {
                      + (internalTransitionEntropy ? internalTransitionEntropy(state, action, nextState) : 0);
             }
           }}));
+      if (verbose || debug) console.log(pad(state),"| | | ╰ messingPotential_action, state",prettyState(state),"action",action,":",MP);
       return MP;
     });
     // recursive function:
     var messingPotential_state = dp.cache(function(state) {
+      if (verbose || debug) console.log(pad(state),"| | messingPotential_state, state",prettyState(state),"...");
       var actions = stateToActions(state),
           maxMPpolicyWeights = map(function(a) { return Math.exp(messingPotential_action(state, a)); }, actions), 
           MP = Math.log(sum(maxMPpolicyWeights));
+      if (verbose || debug) console.log(pad(state),"| | ╰ messingPotential_state, state",prettyState(state),":",MP);
       return MP;
     });
 
@@ -409,11 +413,11 @@ var makeMDPAgentSatisfia = function(params_, world) {
       // return a categorical distribution over (action, aleph4action) pairs
       var d = localPolicyData(state, aleph),
           support = d[0], ps = d[1];
-      if (debug) console.log(" localPolicy", prettyState(state), aleph, d);
+      if (verbose || debug) console.log(pad(state),"| ╰ localPolicy", prettyState(state), aleph, ":", JSON.stringify(d));
       return Categorical({vs: support, ps: ps});
     }
     var localPolicyData = dp.cache(function(state, aleph){
-      if (verbose || debug) console.log(pad(state),"| localPolicy, state",prettyState(state),"aleph",aleph,"...");
+      if (verbose || debug) console.log(pad(state),"| localPolicyData, state",prettyState(state),"aleph",aleph,"...");
       
       // Clip aspiration interval to admissibility interval of state:
       var aleph4state = aspiration4state(state, aleph),
@@ -436,7 +440,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
             return Math.min(1e100, Math.max(Math.exp(-loss / lossTemperature), 1e-100)); 
           }, indices);
 
-      if (debug) console.log("| localPolicyData", prettyState(state), aleph, actions, {propensities});
+      if (verbose || debug) console.log(pad(state),"| localPolicyData", prettyState(state), aleph, actions, {propensities});
 
       // now we can construct the local policy as a WebPPL distribution object:
       var locPol = Infer({ model() {
@@ -451,7 +455,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
         // If a1's admissibility interval is completely contained in aleph4state, we are done:
         if (isSubsetOf(adm1, aleph4state)) {
 
-          if (verbose || debug) console.log(pad(state),"| | locPol, state",prettyState(state),"aleph4state",aleph4state,": a1",a1,"adm1",adm1,"(subset of aleph4state)");
+          if (verbose || debug) console.log(pad(state),"| | localPolicyData, state",prettyState(state),"aleph4state",aleph4state,": a1",a1,"adm1",adm1,"(subset of aleph4state)");
           return [a1, adm1];
 
         } else {
@@ -477,7 +481,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
                 return Math.min(1e100, Math.max(Math.exp(-loss / lossTemperature), 1e-100)); 
               }, indices2);
 
-          if (debug) console.log("| localPolicyData", prettyState(state), aleph4state, {a1, midTarget, estAleph1, mid1, indices2, aleph2target, estAlephs2, propensities2});
+          if (debug) console.log(pad(state),"| | localPolicyData", prettyState(state), aleph4state, {a1, midTarget, estAleph1, mid1, indices2, aleph2target, estAlephs2, propensities2});
 
           // Like for a1, we now draw a2 using a softmin mixture of these actions, based on the new propentities,
           // and get its admissibility interval:
@@ -510,9 +514,9 @@ var makeMDPAgentSatisfia = function(params_, world) {
               aleph1 = [mid1 - x * w1, mid1 + x * w1],
               aleph2 = [mid2 - x * w2, mid2 + x * w2];
                 
-          if (debug) console.log("| localPolicyData",prettyState(state), aleph4state, {a1, estAleph1, adm1: adm1, w1, a2, estAleph2, adm2, w2, p, w, x, aleph1, aleph2});
+          if (debug) console.log(pad(state),"| | localPolicyData",prettyState(state), aleph4state, {a1, estAleph1, adm1: adm1, w1, a2, estAleph2, adm2, w2, p, w, x, aleph1, aleph2});
 
-          if (verbose || debug) console.log(pad(state),"| | locPol, state",prettyState(state),"aleph4state",aleph4state,": a1,p,a2",a1,p,a2,"adm12",adm1,adm2,"aleph12",aleph1,aleph2);
+          if (verbose || debug) console.log(pad(state),"| | localPolicyData, state",prettyState(state),"aleph4state",aleph4state,": a1,p,a2",a1,p,a2,"adm12",adm1,adm2,"aleph12",aleph1,aleph2);
 
           return sample(Categorical({vs: [[a1, aleph1], [a2, aleph2]], ps: [1-p, p]}));
 
@@ -537,7 +541,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
               adm2 = admissibility4action(state, a2),
               adm2Lo = adm2[0], adm2Hi = adm2[1];
 
-          if (debug) console.log("|  ", prettyState(state), aleph, indices2, a2, adm2, adm2Lo, adm2Hi);
+          if (verbose || debug) console.log(pad(state),"|  ", prettyState(state), aleph, indices2, a2, adm2, adm2Lo, adm2Hi);
 
           // If a2's admissibility interval is completely contained in aleph4state, we are done:
           if (isSubsetOf(adm2, aleph4state)) {
@@ -577,7 +581,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
                   aleph1 = [target1Lo + devLo * wsq1, target1Hi + devHi * wsq1],
                   aleph2 = [target2Lo + devLo * wsq2, target2Hi + devHi * wsq2];
                   
-              if (debug) console.log("|  ",prettyState(state), aleph4state,
+              if (verbose || debug) console.log(pad(state),"|  ",prettyState(state), aleph4state,
                 "\n    ", a1, estAleph1, adm1, wsq1, d1Lo, d1Hi, 
                 "\n    ", a2, estAleph2, adm2, wsq2, d2Lo, d2Hi, 
                 "\n    ", facLo, facHi, p, wsq, devLo, devHi, 
@@ -599,7 +603,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
                   }, support);
 
       if (verbose || debug) {
-        console.log(pad(state),"| localPolicy, state",prettyState(state),"aleph",aleph,":");
+        console.log(pad(state),"| | localPolicyData, state",prettyState(state),"aleph",aleph,":");
         _PP.printPolicy(pad(state), support, ps);
       }
       return [support, ps];
@@ -611,7 +615,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     var propagateAspiration = // dp.cache(  // caching this easy to compute function would only clutter the cache due to its many arguments
       function(state, action, aleph4action, Edel, nextState){  
 
-        if (/*verbose ||*/ debug) console.log(pad(state),"| | | propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"...");
+        if (verbose || debug) console.log(pad(state),"| | | | | | propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"...");
 
 /* DISABLED
         // the propagated aspiration is a mixture of a steadfast and a rescaled part:
@@ -621,7 +625,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
         if (rescaling4Successors == 0.0) {
 
           var res = steadfastAleph4nextState;
-          if (verbose || debug) console.log(pad(state),"| | | propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),":",res);
+          if (verbose || debug) console.log(pad(state),"| | | | | | propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),":",res);
           return res;
 
         } else {
@@ -635,7 +639,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
           var rescaledAleph4nextState = interpolate(minAdmissibleV(nextState), lam, maxAdmissibleV(nextState));
           // (only this part preserves aspiration in expectation)
           var res = rescaledAleph4nextState;  // WAS: interpolate(steadfastAleph4nextState, rescaling4Successors, rescaledAleph4nextState);      
-          if (verbose || debug) console.log(pad(state),"| | | propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),":",res);
+          if (verbose || debug) console.log(pad(state),"| | | | | | ╰ propagateAspiration, state",prettyState(state),"action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),":",res);
           return res;
 
           /* Note on influence of Edel: 
@@ -676,7 +680,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // Actual Q and V functions of resulting policy (always returning scalars):
     // ! recursive function:
     var Q = dp.cache(function(state, action, aleph4action){
-      if (debug) console.log("| Q", prettyState(state), action, aleph4action);
+      if (verbose || debug) console.log(pad(state),"| | | | Q", prettyState(state), action, aleph4action);
       var q = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action);
         if (state.terminateAfterAction){
@@ -687,18 +691,18 @@ var makeMDPAgentSatisfia = function(params_, world) {
           return Edel + V(nextState, nextAleph4state);  // ! recursion here !
         }
       }})); 
-      if (debug) console.log("| Q", prettyState(state), action, aleph4action, q);
+      if (verbose || debug) console.log(pad(state),"| | | | ╰ Q", prettyState(state), action, aleph4action, ":", q);
       return q;
     });
     // ! recursive function:
     var V = dp.cache(function(state, aleph4state){
-      if (debug) console.log("| V", prettyState(state), aleph4state);
+      if (verbose || debug) console.log(pad(state),"V", prettyState(state), aleph4state);
       var locPol = localPolicy(state, aleph4state);
       var v = expectation(Infer({ model() {
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V", prettyState(state), aleph4state, ":", v);
+      if (verbose || debug) console.log(pad(state),"╰ V", prettyState(state), aleph4state, ":", v);
       return v;
     });
   
@@ -742,6 +746,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // Expected squared total, for computing the variance of total:
     // ! recursive function:
     var Q2 = dp.cache(function(state, action, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | | | Q2", prettyState(state), action, aleph4action, "...");
       var q2 = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             Edel2 = expectedDeltaSquared(state, action);
@@ -756,23 +761,25 @@ var makeMDPAgentSatisfia = function(params_, world) {
                  + V2(nextState, nextAleph4state); // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q2", prettyState(state), action, aleph4action, q2);
+      if (verbose || debug) console.log(pad(state),"| | | | | ╰ Q2", prettyState(state), action, aleph4action, ":", q2);
       return q2;
     });
     // ! recursive function:
     var V2 = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"V2", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v2 = expectation(Infer({ model() { 
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q2(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V2", prettyState(state), aleph4state, v2);
+      if (verbose || debug) console.log(pad(state),"╰ V2", prettyState(state), aleph4state, ":", v2);
       return v2;
     });
   
     // Similarly: Expected third and fourth powers of total, for computing the 3rd and 4th centralized moment of total:
     // ! recursive function:
     var Q3 = dp.cache(function(state, action, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | | | Q3", prettyState(state), action, aleph4action, "...");
       var q3 = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             Edel2 = expectedDeltaSquared(state, action),
@@ -789,23 +796,25 @@ var makeMDPAgentSatisfia = function(params_, world) {
                  + V3(nextState, nextAleph4state); // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q3", prettyState(state), action, aleph4action, q3);
+      if (verbose || debug) console.log(pad(state),"| | | | | ╰ Q3", prettyState(state), action, aleph4action, ":", q3);
       return q3;
     });
     // ! recursive function:
     var V3 = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"V3", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v3 = expectation(Infer({ model() {
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q3(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V3", prettyState(state), aleph4state, v3);
+      if (verbose || debug) console.log(pad(state),"╰ V3", prettyState(state), aleph4state, ":", v3);
       return v3;
     });
   
     // Expected fourth power of total, for computing the expected fourth power of deviation of total from expected total (= fourth centralized moment of total):
     // ! recursive function:
     var Q4 = dp.cache(function(state, action, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | | | Q4", prettyState(state), action, aleph4action, "...");
       var q4 = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             Edel2 = expectedDeltaSquared(state, action),
@@ -824,23 +833,25 @@ var makeMDPAgentSatisfia = function(params_, world) {
                  + V4(nextState, nextAleph4state); // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q4", prettyState(state), action, aleph4action, q4);
+      if (verbose || debug) console.log(pad(state),"| | | | | ╰ Q4", prettyState(state), action, aleph4action, ":", q4);
       return q4;
     });
     // ! recursive function:
     var V4 = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"V4", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v4 = expectation(Infer({ model() {
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q4(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V4", prettyState(state), aleph4state, v4);
+      if (verbose || debug) console.log(pad(state),"╰ V4", prettyState(state), aleph4state, ":", v4);
       return v4;
     });
   
     // Expected fifth power of total, for computing the bed-and-banks loss component based on a 6th order polynomial potential of this shape: https://www.wolframalpha.com/input?i=plot+%28x%2B1%29%C2%B3%28x-1%29%C2%B3+ :
     // ! recursive function:
     var Q5 = dp.cache(function(state, action, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | | | Q5", prettyState(state), action, aleph4action, "...");
       var q5 = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             Edel2 = expectedDeltaSquared(state, action),
@@ -861,23 +872,25 @@ var makeMDPAgentSatisfia = function(params_, world) {
                  + V5(nextState, nextAleph4state); // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q5", prettyState(state), action, aleph4action, q5);
+      if (verbose || debug) console.log(pad(state),"| | | | | ╰ Q5", prettyState(state), action, aleph4action, ":", q5);
       return q5;
     });
     // ! recursive function:
     var V5 = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"V5", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v5 = expectation(Infer({ model() {
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q5(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V5", prettyState(state), aleph4state, v5);
+      if (verbose || debug) console.log(pad(state),"╰ V5", prettyState(state), aleph4state, ":", v5);
       return v5;
     });
     
     // Expected sixth power of total, for computing the bed-and-banks loss component based on a 6th order polynomial potential of this shape: https://www.wolframalpha.com/input?i=plot+%28x%2B1%29%C2%B3%28x-1%29%C2%B3+ :
     // ! recursive function:
     var Q6 = dp.cache(function(state, action, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | | | Q6", prettyState(state), action, aleph4action, "...");
       var q6 = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             Edel2 = expectedDeltaSquared(state, action),
@@ -900,17 +913,18 @@ var makeMDPAgentSatisfia = function(params_, world) {
                  + V6(nextState, nextAleph4state); // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q6", prettyState(state), action, aleph4action, q6);
+      if (verbose || debug) console.log(pad(state),"| | | | | ╰ Q6", prettyState(state), action, aleph4action, ":", q6);
       return q6;
     });
     // ! recursive function:
     var V6 = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"V6", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v6 = expectation(Infer({ model() {
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q6(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V6", prettyState(state), aleph4state, v6);
+      if (verbose || debug) console.log(pad(state),"╰ V6", prettyState(state), aleph4state, ":", v6);
       return v6;
     });
 
@@ -928,11 +942,12 @@ var makeMDPAgentSatisfia = function(params_, world) {
         });
     */
     var relativeQ2 = dp.cache(function(s, a, al /*aleph4action*/, v){
-        var res = Q2(s,a,al) 
-                  - 2*Q(s,a,al)*v 
-                  + squared(v);
-        if (debug) console.log("| Q2v", prettyState(s), a, al, v, res);
-        return res;
+      if (verbose || debug) console.log(pad(s),"| | | relativeQ2", prettyState(s), a, al, v, "...");
+      var res = Q2(s,a,al) 
+                - 2*Q(s,a,al)*v 
+                + squared(v);
+      if (verbose || debug) console.log(pad(s),"| | | ╰ relativeQ2", prettyState(s), a, al, v, ":", res);
+      return res;
     });
     /*
         var relativeQ3 = dp.cache(function(s, a, al, v){
@@ -940,11 +955,14 @@ var makeMDPAgentSatisfia = function(params_, world) {
         });
     */
     var relativeQ4 = dp.cache(function(s, a, al, v){
-        return Q4(s,a,al) 
-               - 4*Q3(s,a,al)*v 
-               + 6*Q2(s,a,al)*squared(v) 
-               - 4*Q(s,a,al)*cubed(v) 
-               + Math.pow(v,4);
+      if (verbose || debug) console.log(pad(s),"| | | relativeQ4", prettyState(s), a, al, v, "...");
+      var res = Q4(s,a,al) 
+              - 4*Q3(s,a,al)*v 
+              + 6*Q2(s,a,al)*squared(v) 
+              - 4*Q(s,a,al)*cubed(v) 
+              + Math.pow(v,4);
+      if (verbose || debug) console.log(pad(s),"| | | ╰ relativeQ4", prettyState(s), a, al, v, ":", res);
+      return res;
     });
     /*    
         var relativeQ5 = dp.cache(function(s, a, al, v){
@@ -953,13 +971,16 @@ var makeMDPAgentSatisfia = function(params_, world) {
         }); 
     */
     var relativeQ6 = dp.cache(function(s, a, al, v){
-        return Q6(s,a,al) 
-               - 6*Q5(s,a,al)*v 
-               + 15*Q4(s,a,al)*squared(v)
-               - 20*Q3(s,a,al)*cubed(v) 
-               + 15*Q2(s,a,al)*Math.pow(v,4) 
-               - 6*Q(s,a,al)*Math.pow(v,5) 
-               + Math.pow(v,6);
+      if (verbose || debug) console.log(pad(s),"| | | | relativeQ6", prettyState(s), a, al, v, "...");
+      var res = Q6(s,a,al) 
+              - 6*Q5(s,a,al)*v 
+              + 15*Q4(s,a,al)*squared(v)
+              - 20*Q3(s,a,al)*cubed(v) 
+              + 15*Q2(s,a,al)*Math.pow(v,4) 
+              - 6*Q(s,a,al)*Math.pow(v,5) 
+              + Math.pow(v,6);
+      if (verbose || debug) console.log(pad(s),"| | | | ╰ relativeQ6", prettyState(s), a, al, v, ":", res);
+      return res;
     });
     
     // TODO: the following should maybe better be w.r.t. the initial aspiration interval, not the current state's:
@@ -969,25 +990,30 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // (https://www.wolframalpha.com/input?i=plot+%28x-.5%29%5E6+from+0+to+1):
 
     var cupLoss_action = dp.cache(function(state, action, aleph4state, aleph4action){
+      if (verbose || debug) console.log(pad(state),"| | | cupLoss_action", prettyState(state), action, aleph4state, aleph4action, "...");
       var res = relativeQ6(state, action, aleph4action, midpoint(aleph4state));
-      if (debug) console.log("| cupLoss_action", prettyState(state), action, aleph4state, res);
+      if (verbose || debug) console.log(pad(state),"| | | ╰ cupLoss_action", prettyState(state), action, aleph4state, aleph4action, ":", res);
       return res;
     });
     // recursive function:
     var cupLoss_state = dp.cache(function(state, unclippedAleph){
+      if (verbose || debug) console.log(pad(state),"| | cupLoss_state", prettyState(state), unclippedAleph, "...");
       var aleph4state = aspiration4state(state, unclippedAleph),
-          locPol = localPolicy(state, aleph4state); // ! recursion here !
-      return expectation(Infer({ model() {
-        var actionAndAleph = sample(locPol);
-        return cupLoss_action(state, actionAndAleph[0], aleph4state, actionAndAleph[1]);
-      }
-      }));
+          locPol = localPolicy(state, aleph4state), // ! recursion here !
+          res = expectation(Infer({ model() {
+              var actionAndAleph = sample(locPol);
+              return cupLoss_action(state, actionAndAleph[0], aleph4state, actionAndAleph[1]);
+            }
+          }));
+      if (verbose || debug) console.log(pad(state),"| | ╰ cupLoss_state", prettyState(state), unclippedAleph, ":", res);
+      return res;
     });
 
     // Squared deviation of local relative aspiration (midpoint of interval) from 0.5:
     // recursive function:
     var LRAdev_action = dp.cache(function(state, action, aleph4action, myopic) {
       // Note for ANN approximation: LRAdev_action must be between 0 and 0.25 
+      if (verbose || debug) console.log(pad(state),"| | | LRAdev_action", prettyState(state), action, aleph4action, "...");
       var Edel = expectedDelta(state, action),
           res = expectation(Infer({ model() {
             var localLRAdev = squared(0.5 - relativePosition(minAdmissibleQ(state, action), midpoint(aleph4action), maxAdmissibleQ(state, action)));
@@ -999,15 +1025,19 @@ var makeMDPAgentSatisfia = function(params_, world) {
               return localLRAdev + LRAdev_state(nextState, nextAleph4state); // ! recursion here !
             }
           }}));
+      if (verbose || debug) console.log(pad(state),"| | | ╰ LRAdev_action", prettyState(state), action, aleph4action, ":", res);
       return res;
     });
     // recursive function:
     var LRAdev_state = dp.cache(function(state, aleph4state) {
-      var locPol = localPolicy(state, aleph4state);
-      return expectation(Infer({ model() { 
-        var actionAndAleph = sample(locPol);  // ! recursion here !
-        return LRAdev_action(state, actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
-      }}));
+      if (verbose || debug) console.log(pad(state),"| | LRAdev_state", prettyState(state), aleph4state, "...");
+      var locPol = localPolicy(state, aleph4state),
+          res = expectation(Infer({ model() { 
+            var actionAndAleph = sample(locPol);  // ! recursion here !
+            return LRAdev_action(state, actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
+          }}));
+      if (verbose || debug) console.log(pad(state),"| | ╰ LRAdev_state", prettyState(state), aleph4state, ":", res);
+      return res;
     });
   
     // TODO: verify the following two formulas for expected Delta variation along a trajectory:
@@ -1016,6 +1046,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // ! recursive function:
     var Q_ones = dp.cache(function(state, action, aleph4action){
       // Note for ANN approximation: Q_ones must be nonnegative. 
+      if (verbose || debug) console.log(pad(state),"| | | Q_ones", prettyState(state), action, aleph4action, "...");
       var q_ones = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action);
         if (state.terminateAfterAction || aleph4action === undefined){
@@ -1026,17 +1057,18 @@ var makeMDPAgentSatisfia = function(params_, world) {
           return 1 + V_ones(nextState, nextAleph4state);  // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q_ones", prettyState(state), action, aleph4action, q_ones);
+      if (verbose || debug) console.log(pad(state),"| | | ╰ Q_ones", prettyState(state), action, aleph4action, ":", q_ones);
       return q_ones;
     });
     // ! recursive function:
     var V_ones = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"| | V_ones", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var v_ones = expectation(Infer({ model() { 
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q_ones(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V_ones", prettyState(state), aleph4state, v_ones);
+      if (verbose || debug) console.log(pad(state),"| | ╰ V_ones", prettyState(state), aleph4state, ":", v_ones);
       return v_ones;
     });
 
@@ -1044,6 +1076,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     // ! recursive function:
     var Q_DeltaSquare = dp.cache(function(state, action, aleph4action){
       // Note for ANN approximation: Q_DeltaSquare must be nonnegative. 
+      if (verbose || debug) console.log(pad(state),"| | | Q_DeltaSquare", prettyState(state), action, aleph4action, "...");
       var qDsq = expectation(Infer({ model() {
         var Edel = expectedDelta(state, action),
             EdelSq = squared(Edel) + varianceOfDelta(state, action);
@@ -1055,17 +1088,18 @@ var makeMDPAgentSatisfia = function(params_, world) {
           return EdelSq + V_DeltaSquare(nextState, nextAleph4state);  // ! recursion here !
         }
       }}));
-      if (debug) console.log("| Q_DeltaSquare", prettyState(state), action, aleph4action, qDsq);
+      if (verbose || debug) console.log(pad(state),"| | | ╰ Q_DeltaSquare", prettyState(state), action, aleph4action, ":", qDsq);
       return qDsq;
     });
     // ! recursive function:
     var V_DeltaSquare = dp.cache(function(state, aleph4state){
+      if (verbose || debug) console.log(pad(state),"| | V_DeltaSquare", prettyState(state), aleph4state, "...");
       var locPol = localPolicy(state, aleph4state);
       var vDsq = expectation(Infer({ model() { 
         var actionAndAleph = sample(locPol);  // ! recursion here !
         return Q_DeltaSquare(state, actionAndAleph[0], actionAndAleph[1]);  // ! recursion here !
       }}));
-      if (debug) console.log("| V_DeltaSquare", prettyState(state), aleph4state, vDsq);
+      if (verbose || debug) console.log(pad(state),"| | ╰ V_DeltaSquare", prettyState(state), aleph4state, ":", vDsq);
       return vDsq;
     });
   
@@ -1078,6 +1112,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
     var behaviorEntropy_action = dp.cache(function(state, actionProbability, action, aleph4action) {
       // Note for ANN approximation: behaviorEntropy_action must be <= 0 (!) 
       // because it is the negative (!) of a KL divergence. 
+      if (verbose || debug) console.log(pad(state),"| | | behaviorEntropy_action", prettyState(state), actionProbability, action, aleph4action, "...");
       var Edel = expectedDelta(state, action),
           res = expectation(Infer({ model() {
             var uninfPol = uninformedPolicy ? uninformedPolicy(state) : undefined,
@@ -1092,22 +1127,27 @@ var makeMDPAgentSatisfia = function(params_, world) {
               return localEntropy + behaviorEntropy_state(nextState, nextAleph4state); // ! recursion here !
             }
           }}));
+      if (verbose || debug) console.log(pad(state),"| | | ╰ behaviorEntropy_action", prettyState(state), actionProbability, action, aleph4action, ":", res);
       return res;
     });
     // recursive function:
     var behaviorEntropy_state = dp.cache(function(state, aleph4state) {
-      var locPol = localPolicy(state, aleph4state);
-      return expectation(Infer({ model() { 
-        var actionAndAleph = sample(locPol);  // ! recursion here !
-        return behaviorEntropy_action(state, Math.exp(locPol.score(actionAndAleph)), 
-                                      actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
-      }}));
+      if (verbose || debug) console.log(pad(state),"| | behaviorEntropy_state", prettyState(state), aleph4state, "...");
+      var locPol = localPolicy(state, aleph4state),
+          res = expectation(Infer({ model() { 
+            var actionAndAleph = sample(locPol);  // ! recursion here !
+            return behaviorEntropy_action(state, Math.exp(locPol.score(actionAndAleph)), 
+                                          actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
+          }}));
+      if (verbose || debug) console.log(pad(state),"| | ╰ behaviorEntropy_state", prettyState(state), aleph4state, ":", res);
+      return res;
     });
   
     // KL divergence of behavior relative to refPolicy (or uninformedPolicy if refPolicy is undefined):
     // recursive function:
     var behaviorKLdiv_action = dp.cache(function(state, actionProbability, action, aleph4action) {
       // Note for ANN approximation: behaviorKLdiv_action must be nonnegative. 
+      if (verbose || debug) console.log(pad(state),"| | | behaviorKLdiv_action", prettyState(state), actionProbability, action, aleph4action, "...");
       var refPol = referencePolicy ? referencePolicy(state) : uninformedPolicy ? uninformedPolicy(state) : undefined;
       if (refPol) {
         var Edel = expectedDelta(state, action),
@@ -1121,6 +1161,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
               return localDivergence + behaviorKLdiv_state(nextState, nextAleph4state); // ! recursion here !
             }
           }}));
+        if (verbose || debug) console.log(pad(state),"| | | ╰ behaviorKLdiv_action", prettyState(state), actionProbability, action, aleph4action, ":", res);
         return res;
       } else {
         return undefined;
@@ -1128,16 +1169,20 @@ var makeMDPAgentSatisfia = function(params_, world) {
     });
     // recursive function:
     var behaviorKLdiv_state = dp.cache(function(state, aleph4state) {
-      var locPol = localPolicy(state, aleph4state);
-      return expectation(Infer({ model() { 
-        var actionAndAleph = sample(locPol);  // ! recursion here !
-        return behaviorKLdiv_action(state, Math.exp(locPol.score(actionAndAleph)), actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
-      }}));
+      if (verbose || debug) console.log(pad(state),"| | behaviorKLdiv_state", prettyState(state), aleph4state, "...");
+      var locPol = localPolicy(state, aleph4state),
+          res = expectation(Infer({ model() { 
+            var actionAndAleph = sample(locPol);  // ! recursion here !
+            return behaviorKLdiv_action(state, Math.exp(locPol.score(actionAndAleph)), actionAndAleph[0], actionAndAleph[1]); // ! recursion here !
+          }}));
+      if (verbose || debug) console.log(pad(state),"| | ╰ behaviorKLdiv_state", prettyState(state), aleph4state, ":", res);
+      return res;
     });
   
     // other loss:
     // recursive function:
     var otherLoss_action = dp.cache(function(state, action, aleph4action) {
+      if (verbose || debug) console.log(pad(state),"| | | otherLoss_action", prettyState(state), action, aleph4action, "...");
       var Edel = expectedDelta(state, action),
           loss = expectation(Infer({ model() {
             var localLoss = otherLocalLoss(state, action);
@@ -1149,15 +1194,19 @@ var makeMDPAgentSatisfia = function(params_, world) {
               return localLoss + otherLoss_state(nextState, nextAleph4state); // ! recursion here !
             }
           }}));
+      if (verbose || debug) console.log(pad(state),"| | | ╰ otherLoss_action", prettyState(state), action, aleph4action, ":", loss);
       return loss;
     });
     // recursive function:
     var otherLoss_state = dp.cache(function(state, aleph4state) {
-      var locPol = localPolicy(state, aleph4state); // ! recursion here !
-      return expectation(Infer({ model() { 
-        var actionAndAleph = sample(locPol);
-        return otherLoss_action(state, actionAndAleph[0], actionAndAleph[1])  // ! recursion here !
-      }}));
+      if (verbose || debug) console.log(pad(state),"| | otherLoss_state", prettyState(state), aleph4state, "...");
+      var locPol = localPolicy(state, aleph4state), // ! recursion here !
+          res = expectation(Infer({ model() { 
+            var actionAndAleph = sample(locPol);
+            return otherLoss_action(state, actionAndAleph[0], actionAndAleph[1])  // ! recursion here !
+          }}));
+      if (verbose || debug) console.log(pad(state),"| | ╰ otherLoss_state", prettyState(state), aleph4state, ":", res);
+      return res;
     });
   
     var randomTieBreaker = dp.cache(function(state, action) { return Math.random(); });
@@ -1206,7 +1255,7 @@ var makeMDPAgentSatisfia = function(params_, world) {
                 + lTime + lDeltaVariation 
                 + lEntropy + lKLdiv 
                 + lOther;
-      if (verbose || debug) console.log(pad(s),"| | combinedLoss, state",prettyState(s),"action",a,"aleph4state",al4s,"aleph4action",al4a,"estActionProbability",p,":",res,"\n"+pad(s),"| |  ",JSON.stringify({
+      if (verbose || debug) console.log(pad(s),"| | ╰ combinedLoss, state",prettyState(s),"action",a,"aleph4state",al4s,"aleph4action",al4a,"estActionProbability",p,":",res,"\n"+pad(s),"| |     ",JSON.stringify({
                 lRandom, lFeasibilityPower, lMP, lLRA1, lTime1, lEntropy1, lKLdiv1,
                 lVariance, lFourth, lCup, lLRA, 
                 lTime, lDeltaVariation, 

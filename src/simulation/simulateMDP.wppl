@@ -49,8 +49,9 @@ var simulateMDPAgentHyperbolic = function(startState, world, agent, outputType) 
   return sampleSequence(startState);
 };
 
-var simulateMDPAgentSatisfia = function(mdp, agent, state, aleph, options, _t) {
-  var t = _t ? _t : 0,
+var simulateMDPAgentSatisfia = function(mdp, agent, state, aleph, _options, _t) {
+  var options = _options ? _options : {},
+      t = _t ? _t : 0,
       aleph4state = asInterval(aleph);
   if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,"...");
   var lp = agent.localPolicy,
@@ -64,8 +65,12 @@ var simulateMDPAgentSatisfia = function(mdp, agent, state, aleph, options, _t) {
   if (state.terminateAfterAction) {
     if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"(terminal)");
     return { 
-      trajectory: [stepData], // sequence of [state, action] pairs
-      tr4viz: [state],
+      trajectory: [stepData],
+      states: [state],
+      alephs4state: [aleph4state],
+      actions: [action],
+      alephs4action: [aleph4action],
+      expectedDeltas: [Edel],
       conditionalExpectedTotal: Edel // expected Total conditional on this state trajectory
     };
   } else {
@@ -77,8 +82,12 @@ var simulateMDPAgentSatisfia = function(mdp, agent, state, aleph, options, _t) {
     if (options.verbose || options.debug) console.log(pad(state),"SIMULATE, t",t,"state",prettyState(state),"aleph4state",aleph4state,": localPolicy",JSON.stringify(localPolicy.params),"\n"+pad(state),"| action",action,"aleph4action",aleph4action,"Edel",Edel,"nextState",prettyState(nextState),"nextAleph4state",nextAleph4state);
     var nextOut = simulateMDPAgentSatisfia(mdp, agent, nextState, nextAleph4state, options, t+1);
     return { 
-      trajectory: [stepData].concat(nextOut.trajectory), 
-      tr4viz: [state].concat(nextOut.tr4viz),
+      trajectory: [stepData].concat(nextOut.trajectory),
+      states: [state].concat(nextOut.states),
+      alephs4state: [aleph4state].concat(nextOut.alephs4state),
+      actions: [action].concat(nextOut.actions),
+      alephs4action: [aleph4action].concat(nextOut.alephs4action),
+      expectedDeltas: [Edel].concat(nextOut.expectedDeltas),
       conditionalExpectedTotal: Edel + nextOut.conditionalExpectedTotal
     };
   }

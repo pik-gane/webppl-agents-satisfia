@@ -5,14 +5,8 @@ var _SU = webpplAgents.satisfia;
 var _PP = webpplAgents.pretty;
                               
 var env = getEnv(),
-    argv = env.argv,
-    params = extend({
-      // some env-specific parameter settings
-    }, argv),
-    options = extend({
-//      debug: true
-      // some env-specific option settings
-    }, argv),
+    argv = extend({}, env.argv),
+    params = extend({}, argv),
     mdp = VerySimpleGW(argv.gw || "GW2", argv.gwparms, argv.time, argv.timeOutDelta),
     world = mdp.world,
     transition = world.transition,
@@ -22,34 +16,32 @@ var env = getEnv(),
     startState = mdp.startState,
     aleph0 = argv.aleph0 || mdp.aleph0,
     agent = makeMDPAgentSatisfia(extend(params, {
-      expectedDelta, uninformedPolicy, referencePolicy, aleph0, options
+      expectedDelta, uninformedPolicy, referencePolicy, aleph0, argv
     }), world),
     localPolicy = agent.localPolicy, 
     propagateAspiration = agent.propagateAspiration,
     getAspiration4state = agent.getAspiration4state, 
     V = agent.V, 
     V2 = agent.V2,
-    entropy = agent.behaviorEntropy_state, 
-    KLdiv = agent.behaviorKLdiv_state,
-    messingPotential = agent.messingPotential_state,
-    cupLoss = agent.cupLoss_state;
-
-console.log("aleph0", asInterval(aleph0));
+    behaviorEntropy_state = agent.behaviorEntropy_state, 
+    behaviorKLdiv_state = agent.behaviorKLdiv_state,
+    messingPotential_state = agent.messingPotential_state,
+    cupLoss_state = agent.cupLoss_state;
 
 var t0 =  _SU.time();
 // verify meeting of expectations:
-console.log("V", V(startState, aleph0));
-console.log("TIME:", _SU.time() - t0, "ms");
-console.log("cupLoss", cupLoss(mdp.startState, aleph0));
-console.log("entropy", entropy(mdp.startState, aleph0));
-console.log("KLdiv", KLdiv(mdp.startState, aleph0));
-console.log("messPot", messingPotential(mdp.startState, aleph0));
+console.log("\nV", V(startState, aleph0),"\n");
+console.log("\nTIME:", _SU.time() - t0, "ms\n");
+console.log("\ncupLoss", cupLoss_state(mdp.startState, aleph0),"\n");
+console.log("\nentropy", behaviorEntropy_state(mdp.startState, aleph0),"\n");
+console.log("\nKLdiv", behaviorKLdiv_state(mdp.startState, aleph0),"\n");
+console.log("\nmessingPotential", messingPotential_state(mdp.startState, aleph0),"\n");
 
 var gd = agent.getData, agentData = gd();
 
 // estimate distribution of trajectories:
 
-var sym = simulateMDPAgentSatisfia(mdp, agent, mdp.startState, aleph0, options); // simulate(mdp.startState, aleph0);
+var sym = simulateMDPAgentSatisfia(mdp, agent, mdp.startState, aleph0, argv); // simulate(mdp.startState, aleph0);
 
 var trajDist = Infer({ model() {
   return sym.trajectory;
@@ -85,7 +77,7 @@ console.log("\naction frequencies:");
 console.log(_PP.locActionData2ASCII(locActionData.actionFrequency));
 
 
-var tr=sym.tr4viz;
+var tr=sym.states;
 console.log(tr);
 console.log(tr[0].loc);
 console.log(tr[1].loc);

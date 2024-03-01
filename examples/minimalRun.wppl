@@ -1,0 +1,14 @@
+// run via  webppl --require webppl-dp --require . examples/minimalRun.wppl
+                              
+var env = getEnv(),
+    mdp = VerySimpleGW("GW6"),
+    agent = makeMDPAgentSatisfia(mdp.params, mdp.world);
+
+var simulationResults = simulateMDPAgentSatisfia(mdp, agent, mdp.startState, mdp.aleph0); 
+
+if (env.inBrowser) {
+  viz.gridworld(mdp.orig_world, { trajectory: simulationResults.states });
+} else {
+  console.log("simulationResults", simulationResults);
+}
+

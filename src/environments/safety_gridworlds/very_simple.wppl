@@ -1,7 +1,7 @@
 // TODO: prevent agent from turning around
 
-var VerySimpleGW = function(gw, parms, time, timeOutDelta) {
-  console.log("VerySimpleGW", gw, parms, time, timeOutDelta);
+var VerySimpleGW = function(gw, parms, _time, timeOutDelta) {
+  var time = _time ? _time : 10;
 
   var makeGW = function(d) {
     var mdp = makeGridWorldMDP({
@@ -30,7 +30,16 @@ var VerySimpleGW = function(gw, parms, time, timeOutDelta) {
         },
         our_world = { transition: world.transition, stateToActions, feature };
 
-    return { world: our_world,orig_world: world, expectedDelta, uninformedPolicy, referencePolicy, startState, aleph0: d.aleph0 };
+    return { 
+              world: our_world, 
+              orig_world: world, 
+              params: { expectedDelta, uninformedPolicy, referencePolicy, startState, aleph0: d.aleph0 },
+              expectedDelta,
+              uninformedPolicy,
+              referencePolicy,
+              startState,
+              aleph0: d.aleph0 
+           };
   };
 
   if (gw == "GW1" || gw === undefined) {
