@@ -1,6 +1,6 @@
 // TODO: prevent agent from turning around
 
-var VerySimpleGW = function(gw, parms, _time, timeOutDelta) {
+var VerySimpleGW = function(gw, parms, _time, timeOutDelta, allowBackwards) {
   var time = _time ? _time : 10;
 
   var makeGW = function(d) {
@@ -26,7 +26,7 @@ var VerySimpleGW = function(gw, parms, _time, timeOutDelta) {
                     : (lx == px-1 && ly == py) ? "r"
                     : undefined,
               backIndex = actions.indexOf(back);
-          return actions.slice(0, backIndex).concat(actions.slice(backIndex+1));
+          return allowBackwards ? actions : actions.slice(0, backIndex).concat(actions.slice(backIndex+1));
         },
         our_world = { transition: world.transition, stateToActions, feature };
 
@@ -228,8 +228,8 @@ var VerySimpleGW = function(gw, parms, _time, timeOutDelta) {
           '9': 9,
           ' ': 0
         },
-        aleph0: 5,
-        totalTime: 2,
+        aleph0: 15,
+        totalTime: 6,
         timeOutDelta: 0
       });
     /*
